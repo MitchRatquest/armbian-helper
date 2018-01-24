@@ -14,16 +14,16 @@ run ./armbian-helper.py and use the arrow keys to select the interface you would
 
 
 ## TODO:
-decide whether to support 3.4.113 or not
-autodetect board
-benchmark sysfs vs gpiod
-add USB OTG legacy and configfs configurations
-test IR
-get USB physical positions in relation to their actual data addresses
-dtc compiler for dtbs
-test HDMI with h3disp
-ethernet stats
-iptables forwarding 
-hostapd
-anything to do with wireless
-get CSI camera for testing
+- decide whether to support 3.4.113 or not
+- autodetect board
+- benchmark sysfs vs gpiod
+- add USB OTG legacy and configfs configurations
+- test IR
+- get USB physical positions in relation to their actual data addresses
+- dtc compiler for dtbs
+- test HDMI with h3disp
+- ethernet stats
+- iptables forwarding 
+- hostapd
+- anything to do with wireless
+- get CSI camera for testing
