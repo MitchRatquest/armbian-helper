@@ -9,11 +9,10 @@ board = neo
 COLUMNS=79 #default tty size - 1 
 LINES=24
 
-def make_panel(h,l, y,x, str):
+def make_panel(h,l, y,x):
 	win = curses.newwin(h,l, y,x)
 	win.erase()
 	win.box()
-	win.addstr(2, 10, str)
 	panel = curses.panel.new_panel(win)
 	return win, panel
 
@@ -29,9 +28,10 @@ def test(stdscr,board):
 		quit()
 
 def gpioMenu(screen, board):
-	helpwin,helppanel = make_panel(20,45,3,20, '')
+	helpwin,helppanel = make_panel(LINES,COLUMNS,0,0)
 	helppanel.hide()
-	defwin,defpanel = make_panel(24,75,0,0, 'DEFINITIONS:')
+	helpindex = helpMenuUpdate(helpwin,helppanel,gpioHelp,0)
+	defwin,defpanel = make_panel(24,75,0,0)
 	defpanel.hide()
 	screen.erase()
 	warning="White arrow on board always points to pin 1"
@@ -51,10 +51,13 @@ def gpioMenu(screen, board):
 	screen.addstr(offset+len(pinNumbers)/2+1,36,"'-------'")		#bottom bar
 	screen.vline(offset+1,36,'|',len(pinNumbers)/2)					#left side
 	screen.vline(offset+1,44,'|',len(pinNumbers)/2)					#right side
+	helpstring = "press h for help"
+	screen.addstr(offset+len(pinNumbers)/2+3,(COLUMNS/2)-(len(helpstring))/2,helpstring,curses.A_BOLD)
 	index=4											#place on screen to draw
 	screen.chgat(index/2,15,25,curses.A_STANDOUT)	#first pin
 	while True:
 		pinStats(index, screen)
+		#screen.timeout(-4)
 		c = screen.getch()
 		
 		if c == curses.KEY_RIGHT:
@@ -64,13 +67,14 @@ def gpioMenu(screen, board):
 			index=index+1
 			#if index >=44:
 			if index >= len(pinNumbers)+4:		#out of bounds on bottom
-				index=4							#wrap to top left 
+				index=4							#wra
 			for x in range(0,LINES):
 				screen.chgat(x,0,curses.A_NORMAL)
 			if index %2==1: #right side
 				screen.chgat(index-(index/2)-1,41,COLUMNS/2,curses.A_STANDOUT)
 			else:
 				screen.chgat(index/2,15,25,curses.A_STANDOUT)
+		
 		if c == curses.KEY_LEFT:
 			helppanel.hide()
 			defpanel.hide()
@@ -220,64 +224,57 @@ def gpioMenu(screen, board):
 			screen.addstr(24,80/2-len(response)/2,response,curses.A_STANDOUT)
 		
 		if c == 104: # 'h'
-			helpMenu(helpwin,gpio)
-			#helpwin.erase()
-			#helpwin,helppanel = make_panel(20,45,3,20, 'AVAILABLE COMMANDS:')
-			'''
-			helpwin.addstr(2,10,"AVAIALBLE COMMANDS: ")
-			helpwin.addstr(4,10,"s - initialize pin")
-			helpwin.addstr(5,10,"u - unitialiaze pin")
-			helpwin.addstr(6,10,"r - read pin's current value")
-			helpwin.addstr(7,10,"i - set pin direction input")
-			helpwin.addstr(8,10,"o - set pin direction output")
-			helpwin.addstr(9,10,"1 - set pin high")
-			helpwin.addstr(10,10,"0 - set pin low")
-			helpwin.addstr(12,2,"press any arrow key to close this window")
-			helpwin.addstr(14,2,"press m if this you need more help", curses.A_BOLD)
-			'''
-			helppanel.show()
-			helpwin.refresh()
-			updateScreen(screen)
-			
-			c = helpwin.getch()
-			if c == 109: #'m'
-				#defwin,defpanel = make_panel(24,75,0,0, 'DEFINITIONS:')
-				
-				#defwin.erase()
-				defwin.addstr(2,10, "DEFINITIONS:")
-				
-				defwin.addstr(3,4,"The row of pins on the board have several functions", curses.A_BOLD)
-				defwin.addstr(4,4,"The ones marked Ground, 5 volts, and 3.3 volts can't be changed", curses.A_BOLD)
-				defwin.addstr(5,4,"The other ones can either be general purpose inputs or outputs", curses.A_BOLD)
-				defwin.addstr(6,4,"They are called GPIO", curses.A_BOLD)
-				defwin.addstr(7,4,"Some GPIO are part of other systems, such as SPI, I2C, and I2S", curses.A_BOLD)
-				defwin.addstr(8,4,"----------------------------------------------------------------",curses.A_BOLD)
-				defwin.addstr(9,4,"Pin names are derived from a formula based on the H3 CPU:",curses.A_BOLD)
-				defwin.addstr(10,4,"(position of letter in alphabet - 1) * 32 + pin number",curses.A_BOLD)
-				defwin.addstr(11,4,"So PG14 would be pin number 206",curses.A_BOLD)
-				defwin.addstr(12,4,"Pins have to be initialized before they can be used",curses.A_BOLD)
-				defwin.addstr(13,4,"Echo your calculated pin number to /sys/class/gpio/export",curses.A_BOLD)
-				defwin.addstr(14,4,"This creates the directory /sys/class/gpio/gpio206",curses.A_BOLD)
-				defwin.addstr(15,4,"Now you can change the properties of the pins",curses.A_BOLD)
-				defwin.addstr(16,4,"By echoing values to the files in that directory",curses.A_BOLD)
-				defwin.addstr(17,4,"----------------------------------------------------------------",curses.A_BOLD)
-				defwin.addstr(18,4,"For more information, google 'gpio with sysfs'",curses.A_BOLD)
-				defwin.addstr(19,4,"With patience, you can learn it. Believe in yourself",curses.A_BOLD)
-				defwin.addstr(21,4,"PRESS ANY ARROW KEY TO EXIT THIS PROMPT", curses.A_STANDOUT)
-				defwin.refresh()
-				defpanel.show()
-				updateScreen(screen)
-			helpwin.timeout(-1)
+			cham = helpMenuShow(helpwin,helppanel,gpioHelp)
+		updateScreen(screen)
 
-def helpMenu(window, gpio):
-	#window.erase()
-	for x in range(len(gpio)):
-		if x == 0:
-			window.addstr(2+x,45/2-(len(gpio[0])-2),gpio[0],curses.A_BOLD)
-		else:
-			window.addstr(2+x,10,str(gpio[x]))
+	
+def helpMenuShow(window, panel,string):
+	panel.show()
+	window.refresh()
+	window.timeout(500)
+	index = 0
+	while True:
+		c = window.getch()
+		#window.addstr(20,10,'                        ')
+		#window.addstr(20,10,str(c))
+		if c == 32:
+			panel.hide()
+			return
+		if c == 66: #arrow down
+			index = index + 1
+			index = helpMenuUpdate(window,panel,string,index)
+			if index > len(string)-LINES-1:
+				index = index -1
+		if c == 65: #arrow up
+			index = index - 1
+			index = helpMenuUpdate(window,panel,string,index)
+			if index <= 0:
+				index = index + 1
+		updateScreen(window)
 
-
+	
+def helpMenuUpdate(window, panel,gpio,index):
+	for x in range(LINES-3): #clear window without erasing border
+		window.addstr(1+x,2,'                                                                  ')
+	for x in range(LINES-4):
+		try:
+			window.addstr(2+x,4,str(gpio[x+index]))
+		except:
+			pass
+		#add warning line at bottom:
+		warning = "up/down arrow to scroll,spacebar to exit"
+		window.addstr(LINES-2,4,warning,curses.A_BOLD)
+	return index
+	'''
+	window.timeout(-1)
+	c = window.getch()
+	if c == curses.KEY_NPAGE: #page down
+		window.addstr(5,40,"FUCK YA")
+		window.refresh()
+	if c == curses.KEY_PPAGE: #page down
+		window.addstr(5,25,"FFFFFFFFFFFUCK YA")
+		window.refresh()
+'''
 def mainMenu(stdscr, currentMenuItem, menuitems):
 	while True:
 		changed=0
@@ -356,8 +353,8 @@ def mainMenu(stdscr, currentMenuItem, menuitems):
 				modify /etc/modules
 				'''
 		updateScreen(stdscr)
-		if(changed==1):
-			highlightMenu(currentMenuItem,stdscr,board)	#display selection
+		#if(changed==1):
+		highlightMenu(currentMenuItem,stdscr,board)	#display selection
 		if c == 27: #escape key to quit
 			curses.endwin()
 			quit()
@@ -427,6 +424,7 @@ def setupScreen(screen):
 	curses.use_default_colors() 
 	for i in range(0, curses.COLORS):
 		curses.init_pair(i+1, i, 0)
+	screen.timeout(-1)
 	#screen.bkgd(' ', curses.color_pair(0 ) )
 
 def clearScreen(screen):
@@ -565,6 +563,7 @@ def usbMenu(screen):
 	except:
 		gadgetfs = "no gadgetFS support available"
 	FUNCTIONS_USER_ENABLED=[]
+	c = screen.getch()
 #setup -> go through list of gadgets -> finish
 #https://www.kernel.org/doc/Documentation/usb/gadget_configfs.txt
 #https://www.kernel.org/doc/Documentation/ABI/testing/configfs-usb-gadget-ecm
