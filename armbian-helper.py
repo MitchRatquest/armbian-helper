@@ -28,21 +28,23 @@ def test(stdscr,board):
 		quit()
 
 def gpioMenu(screen, board):
-	helpwin = initGpioMenu(screen,board)
-	index=4
+	initGpioMenu(screen,board)
+	helpwin = initHelpMenu(screen)
+	offset=4										#y offset for drawing on screen
+	index=offset									#index for drawing operations
 	pinNumbers=board[3]
 	pinNames=board[2]
-
 	while True:
+	#	pin = pinNumbers[index - offset]			#real pin being referenced
 		screen.timeout(20)
-		pinStats(index, screen)
+		pinStats(index-offset, screen, pinNumbers)	#upper left corner stats
 		c = screen.getch()
 		
 		if c == curses.KEY_RIGHT:
-			screen.hline(24,0," ",COLUMNS)		#clear status line
+			screen.hline(24,0," ",COLUMNS)			#clear status line
 			index=index+1
-			if index >= len(pinNumbers)+4:		#out of bounds on bottom
-				index=4							#wrap selection
+			if index >= len(pinNumbers)+offset:		#out of bounds on bottom
+				index=offset						#wrap selection
 			for x in range(0,LINES):
 				screen.chgat(x,0,curses.A_NORMAL)
 			if index %2==1: #right side
@@ -51,9 +53,9 @@ def gpioMenu(screen, board):
 				screen.chgat(index/2,15,25,curses.A_STANDOUT)
 		
 		if c == curses.KEY_LEFT:
-			screen.hline(24,0," ",COLUMNS)		#clear status line
-			if index <5:						#out of bounds on top 
-				index= len(pinNumbers)+4		#wrap selection to bottom right
+			screen.hline(24,0," ",COLUMNS)			#clear status line
+			if index < offset +1 :					#out of bounds on top 
+				index= len(pinNumbers)+offset		#wrap selection to bottom right
 			index = index-1
 			for x in range(0,LINES):
 				screen.chgat(x,0,curses.A_NORMAL)
@@ -63,10 +65,10 @@ def gpioMenu(screen, board):
 				screen.chgat(index/2,15,25,curses.A_STANDOUT)
 		
 		if c == curses.KEY_UP:
-			screen.hline(24,0," ",COLUMNS)		#clear status line
+			screen.hline(24,0," ",COLUMNS)			#clear status line
 			index = index-2
-			if index <4: 						#out of bounds on the top
-				index=len(pinNumbers)+3			#wrap selection to bottom right
+			if index < offset: 						#out of bounds on the top
+				index=len(pinNumbers)+offset-1		#wrap selection to bottom right
 			for x in range(0,LINES):
 				screen.chgat(x,0,curses.A_NORMAL)
 			if index %2==1: #right side
@@ -75,127 +77,134 @@ def gpioMenu(screen, board):
 				screen.chgat(index/2,15,25,curses.A_STANDOUT)
 		
 		if c == curses.KEY_DOWN:
-			screen.hline(24,0," ",COLUMNS)		#clear status line
+			screen.hline(24,0," ",COLUMNS)			#clear status line
 			index = index+2
-			if index >=len(pinNumbers)+4:		#out of bottom bounds
-				index=4							#wrap selection to top left
+			if index >=len(pinNumbers)+offset:		#out of bottom bounds
+				index=offset						#wrap selection to top left
 			for x in range(0,LINES):
 				screen.chgat(x,0,curses.A_NORMAL)
 			if index %2==1: #right side
 				screen.chgat(index-(index/2)-1,41,COLUMNS/2,curses.A_STANDOUT)
 			else:
 				screen.chgat(index/2,15,25,curses.A_STANDOUT)
-		
 		if c == 98: #'b' key to quit
 			clearScreen(screen)
 			return
-###########################################
-#
-# s = intitialize
-# u = uninitialize
-# i = input
-# o = output
-# 1 = set high
-# 0 = set low
-# r = read pin value
-#
-# h = help menu
-#
-###############################################
 		if c == 115: # ord('s')
-			screen.hline(24,0," ",79) #clear line completely
-			if pinNumbers[(index-4)] == -1:
-				response = "cannot init this pin"
-				pass
-			elif createPinsysfs(pinNumbers[(index-4)]) == 0:
-				response = "successfully initialized pin " + str((index+3)/2)
-			screen.addstr(24,80/2-len(response)/2,response,curses.A_STANDOUT)
+			initializePin(index-offset,screen,pinNumbers) #should be pinNumbers[index-offset],screen instead
 		if c == 117: # 'u'
-			screen.hline(24,0," ",79) #clear line completely
-			if pinNumbers[(index-4)] == -1:
-				response = "cannot uninit this pin"
-				pass
-			elif removePinsysfs(pinNumbers[(index-4)]) == 0:
-				response = "successfully uninitialized pin " + str((index+3)/2)
-			screen.addstr(24,80/2-len(response)/2,response,curses.A_STANDOUT)
+			uninitializePin(index-offset,screen,pinNumbers)
 		if c == 114: # 'r'
-			if pinNumbers[(index-4)] == -1:
-				response = "This pin's state is not able to be changed"
-				pass
-			else:
-				screen.hline(24,0," ",79)
-				value = readPinsysfs(pinNumbers[(index-4)])
-				if value is None:
-					response = "This pin is not initialized"
-				else:
-					response = "Pin "+str(index-3)+"'s value is "+str(value)
-			screen.addstr(24,80/2-len(response)/2,response,curses.A_STANDOUT)
+			readPin(index-offset,screen,pinNumbers)
 		if c == 105: # 'i'
-			screen.hline(24,0," ",79) #clear line completely
-			if pinNumbers[(index-4)] == -1:
-				response = "This pin's state is not able to be changed"
-				pass
-			else:
-				value = directionPinsysfs(pinNumbers[(index-4)],'in')
-				if value == 0:
-					response = "Pin "+str(index-3)+" is an input pin and can sink up to 10 milliamps"
-				if value == -1:
-					response = "Pin is already set to input"
-			screen.addstr(24,80/2-len(response)/2,response,curses.A_STANDOUT)
+			pinInput(index-offset,screen,pinNumbers)
 		if c == 111: # 'o'
-			if pinNumbers[(index-4)] == -1:
-				response = "This pin's state is not able to be changed"
-				screen.addstr(24,80/2-len(response)/2,response,curses.A_STANDOUT)
-				pass
-			else:
-				screen.hline(24,0," ",79) #clear line completely
-				value = directionPinsysfs(orangepiPCPins[(index-3)*2-1],'out')
-				if value == 0:
-					response = "Pin "+str(index-3)+" is an output pin and can source up to 10 milliamps"
-				if value == -1:
-					response = "Pin is already set to output"
-				screen.addstr(24,80/2-len(response)/2,response,curses.A_STANDOUT)
+			pinOutput(index-offset,screen,pinNumbers)
 		if c == 49: # '1'
-			screen.hline(24,0," ",79) #clear line completely
-			response=''
-			if orangepiPCPins[(index-3)*2-1] == -1:
-				response = "This pin's state is not able to be changed"
-			elif os.path.isdir('/sys/class/gpio/gpio'+str(orangepiPCPins[(index-3)*2-1])) == False: #not configured
-				createPinsysfs(orangepiPCPins[(index-3)*2-1])
-			elif readSysfs(orangepiPCPins[(index-3)*2-1], 'direction') == 'in':
-				response = "This pin is an input and cannot be set to 1 (3.3 volts)"
-				screen.addstr(24,80/2-len(response)/2,response,curses.A_STANDOUT)
-			else:
-				
-				value = valuePinsysfs(orangepiPCPins[(index-3)*2-1],'On')
-				if value == 0:
-					response = "Pin "+str(index-3)+"'s value is set to 1 (3.3 volts)"
-				if value == -1:
-					response = "Pin's value is already at 1"
-			screen.addstr(24,80/2-len(response)/2,response,curses.A_STANDOUT)
+			pinHigh(index-offset,screen,pinNumbers)
 		if c == 48: # '0'
-			screen.hline(24,0," ",79) #clear line completely
-			if orangepiPCPins[(index-3)*2-1] == -1:
-				response = "This pin's state is not able to be changed"
-			elif os.path.isdir('/sys/class/gpio/gpio'+str(orangepiPCPins[(index-3)*2-1])) == False: #not configured
-				createPinsysfs(orangepiPCPins[(index-3)*2-1])
-			elif readSysfs(orangepiPCPins[(index-3)*2-1],'direction').strip('\n')=='in':
-				response = "This is set to input and cannot be pulled low"
-			else:
-				value = valuePinsysfs(orangepiPCPins[(index-3)*2-1],0)
-				if value == 0:
-					response = "Pin "+str(index-3)+"'s value is set to 0 (ground)"
-				if value == -1:
-					response = "Pin's value is already at 0"
-			screen.addstr(24,80/2-len(response)/2,response,curses.A_STANDOUT)
+			pinLow(index-offset,screen,pinNumbers)
 		if c == 104: # 'h'
 			helpMenuShow(helpwin,gpioHelp)
 		updateScreen(screen)
 
+def initializePin(index,screen,pinNumbers):
+	screen.hline(24,0," ",COLUMNS) #clear line completely
+	if pinNumbers[index] == -1:
+		response = "cannot init this pin"
+	elif createPinsysfs(pinNumbers[index]) == 0:
+		response = "successfully initialized pin " + str((index)+1)
+	screen.addstr(24,80/2-len(response)/2,response,curses.A_STANDOUT)
+
+def uninitializePin(index,screen,pinNumbers):
+	response=''
+	screen.hline(24,0," ",COLUMNS) #clear line completely
+	if pinNumbers[index] == -1:
+		response = "cannot uninit this pin"
+	elif removePinsysfs(pinNumbers[index]) == 0:
+		response = "successfully uninitialized pin " + str((index)+1)
+	elif removePinsysfs(pinNumbers[index]) == -1:
+		response = "pin wasn't initialized"
+	screen.addstr(24,80/2-len(response)/2,response,curses.A_STANDOUT)
+
+def readPin(index,screen,pinNumbers):
+	screen.hline(24,0," ",COLUMNS) #clear line completely
+	if pinNumbers[index] == -1:
+		response = "This pin's state is not able to be changed"
+		pass
+	else:
+		screen.hline(24,0," ",COLUMNS)
+		value = readPinsysfs(pinNumbers[index])
+		if value is None:
+			response = "This pin is not initialized"
+		else:
+			response = "Pin "+str(index+1)+"'s value is "+str(value)
+	screen.addstr(24,80/2-len(response)/2,response,curses.A_STANDOUT)
+
+def pinInput(index, screen, pinNumbers):
+	screen.hline(24,0," ",COLUMNS) #clear line completely
+	if pinNumbers[index] == -1:
+		response = "This pin's state is not able to be changed"
+		pass
+	else:
+		value = directionPinsysfs(pinNumbers[index],'in')
+		if value == 0:
+			response = "Pin "+str(index+1)+" is an input pin and can sink up to 10 milliamps"
+		if value == -1:
+			response = "Pin is already set to input"
+	screen.addstr(24,80/2-len(response)/2,response,curses.A_STANDOUT)
+
+def pinOutput(index, screen, pinNumbers):
+	screen.hline(24,0," ",COLUMNS) #clear line completely
+	if pinNumbers[index] == -1:
+		response = "This pin's state is not able to be changed"
+		screen.addstr(24,80/2-len(response)/2,response,curses.A_STANDOUT)
+		pass
+	else:
+		value = directionPinsysfs(pinNumbers[index],'out')
+		if value == 0:
+			response = "Pin "+str(index)+" is an output pin and can source up to 10 milliamps"
+		if value == -1:
+			response = "Pin is already set to output"
+		screen.addstr(24,80/2-len(response)/2,response,curses.A_STANDOUT)
+
+def pinHigh(index,screen,pinNumbers):
+	screen.hline(24,0," ",COLUMNS) #clear line completely
+	response=''
+	if pinNumbers[index] == -1:
+		response = "This pin's state is not able to be changed"
+	elif os.path.isdir('/sys/class/gpio/gpio'+str(orangepiPCPins[(index-3)*2-1])) == False: #not configured
+		createPinsysfs(pinNumbers[index])
+	elif readSysfs(pinNumbers[index], 'direction') == 'in':
+		response = "This pin is an input and cannot be set to 1 (3.3 volts)"
+		screen.addstr(24,80/2-len(response)/2,response,curses.A_STANDOUT)
+	else:
+		
+		value = valuePinsysfs(pinNumbers[index],'On')
+		if value == 0:
+			response = "Pin "+str(index)+"'s value is set to 1 (3.3 volts)"
+		if value == -1:
+			response = "Pin's value is already at 1"
+	screen.addstr(24,80/2-len(response)/2,response,curses.A_STANDOUT)
+
+def pinLow(index,screen,pinNumbers):
+	screen.hline(24,0," ",COLUMNS) #clear line completely
+	if pinNumbers[index] == -1:
+		response = "This pin's state is not able to be changed"
+	elif os.path.isdir('/sys/class/gpio/gpio'+str(pinNumbers[index])) == False: #not configured
+		createPinsysfs(pinNumbers[index])
+		response = 'pin not configured'
+	elif readSysfs(pinNumbers[index],'direction').strip('\n')=='in':
+		response = "This is set to input and cannot be pulled low"
+	else:
+		value = valuePinsysfs(pinNumbers[index],0)
+		if value == 0:
+			response = "Pin "+str(index)+"'s value is set to 0 (ground)"
+		if value == -1:
+			response = "Pin's value is already at 0"
+	screen.addstr(24,80/2-len(response)/2,response,curses.A_STANDOUT)
+
 def initGpioMenu(screen,board,index=4):
-	helpwin=make_panel(LINES,COLUMNS,0,0)
-	helpwin[1].hide()
-	helpindex=0
 	screen.erase()
 	updateScreen(screen)
 	warning="White arrow on board always points to pin 1"
@@ -220,6 +229,11 @@ def initGpioMenu(screen,board,index=4):
 	index=4											#place on screen to draw
 	screen.chgat(index/2,15,25,curses.A_STANDOUT)	#first pin
 	updateScreen(screen)
+
+def initHelpMenu(screen):
+	helpwin=make_panel(LINES,COLUMNS,0,0)
+	helpwin[1].hide()
+	helpindex=0
 	return helpwin
 
 def helpMenuShow(windowpanel,string):
@@ -341,10 +355,10 @@ def mainMenu(stdscr, currentMenuItem, menuitems):
 			curses.endwin()
 			quit()
 
-def pinStats(pin,screen):
+def pinStats(pin,screen,pinNumbers):
 	for x in range(0,5):
 		screen.addstr(x,0,'             ')
-	actualpin = orangepiPCPins[(pin-3)*2-1]  #get actual pin number, aka PC7=71 or whatever
+	actualpin = pinNumbers[pin]  #get actual pin number, aka PC7=71 or whatever
 	if actualpin == -1:
 		slot1="cant change"
 		screen.addstr(0,0,slot1,curses.A_STANDOUT)
@@ -361,9 +375,6 @@ def pinStats(pin,screen):
 		else:
 			success="configured"
 			screen.addstr(1,0,success,curses.A_STANDOUT)
-			#file = '/sys/class/gpio/gpio'+str(actualpin)+'/value'
-			#p = subprocess.Popen(["cat",file],stdout=subprocess.PIPE)
-			#out, err = p.communicate()
 			status = "cur val: " + str(readPinsysfs(actualpin))  
 			screen.addstr(2,0,status,curses.A_STANDOUT) 
 			status2 = "cur dir: "
@@ -566,7 +577,7 @@ def setupGadget(serial=8349982, manuf="testing", product="multigadget"):
 	Bash("echo "+str(manuf)+" > "+topdir+"/g1/strings/0x409/manufacturer")
 	Bash("echo "+str(product)+" > "+topdir+"/g1/strings/0x409/product")
 
-def gadgetRNDIS():
+def gadgetSetupRNDIS():
 	topdir = "/sys/kernel/config/usb_gadget/g1/"
 	Bash("mkdir -p "+topdir+"functions/rndis.usb0")
 	Bash("mkdir -p "+topdir+"configs/c.1")
