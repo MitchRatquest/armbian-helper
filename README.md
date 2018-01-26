@@ -11,7 +11,7 @@ Currently only aiming to support the H3 CPU, but this could be extended to other
 ## Usage
 run ./armbian-helper.py and use the arrow keys to select the interface you would like to interact with. Currently only the GPIO interface is managable via sysfs. Press 'h' in any menu for a help window, and press 'm' for more detailed information. 
 
-
+![example](https://github.com/MitchRatquest/armbian-helper/blob/master/example.gif?raw=true)
 
 ## TODO:
 - decide whether to support 3.4.113 or not
