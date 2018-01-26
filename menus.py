@@ -12,7 +12,6 @@ supporteBoards=["orangepione","nanopineo","orangepipc","orangepizero"] #first li
 #
 # NANOPI NEO
 #
-#
 ###########################
 nanopineoMenu=[ #areas to highlight
 "ETH0",[0,11,8,25], 
@@ -118,12 +117,11 @@ neo.append(nanopineoUART)
 #
 # ORANGE PI ONE
 #
-#
 ###########################
 orangepiOneMenu=[
 "GPIO",[0,10,3,62],
 "MICROSD",[12,36,19,51],
-"HDMI",[16,16,22,31],
+"HDMI",[16,16,21,31],
 "USBOTG",[17,6,20,13],
 "UART",[15,7,15,11],
 "ETH0",[8,1,14,17],
@@ -149,8 +147,8 @@ orangepiOneOutline="""    .-----.-----------------------------------------------
     | .-----.   |             |     |             |      |  - |      |
     | | USB |   |    HDMI     |     |             |      |  I |      |
     '-| OTG |---|             |-----'-------------'------|  N |------'
-      '-----'   |             |                          '----'       
-                '-------------'                                       """
+      '-----'   |             |                          '----'      
+                '-------------'                                      """
 orangepiOnePinsEnglish=['',
 '3.3 volts',					'5 volts',
 'I2C0-SDA / PA12',				'5 volts',
@@ -211,7 +209,6 @@ opione.append(orangepiOneUART)
 ###########################
 #
 # ORANGE PI PC
-#
 #
 ###########################
 orangepiPCMenu=[
@@ -383,7 +380,6 @@ PINS="""                                   .-------.
 #
 # ORANGE PI ZERO
 #
-#
 ###########################
 
 
@@ -484,58 +480,50 @@ opiz.append(orangepiZeroUART)
 #
 # HELP MENU: GPIO
 #
-#
 ###########################
-gpioHelp=[
-"AVAILABLE COMMANDS: ",
-"",
-"s - initialize pin",
-"u - unitialiaze pin",
-"r - read pin's current value",
-"i - set pin direction input",
-"o - set pin direction output",
-"1 - set pin high",
-"0 - set pin low",
-"",
-"yaaaaaaa",
-"",
-"press m if this you need more help",
-"",
-"The row of pins on the board have several functions",
-"The ones marked Ground, 5 volts, and 3.3 volts can't be changed",
-"The other ones can either be general purpose inputs or outputs",
-"They are called GPIO",
-"Some GPIO are part of other systems, such as SPI, I2C, and I2S",
-"----------------------------------------------------------------",
-"Pin names are derived from a formula based on the H3 CPU:",
-"(position of letter in alphabet - 1) * 32 + pin number",
-"So PG14 would be pin number 206",
-"Pins have to be initialized before they can be used",
-"Echo your calculated pin number to /sys/class/gpio/export",
-"This creates the directory /sys/class/gpio/gpio206",
-"Now you can change the properties of the pins",
-"By echoing values to the files in that directory",
-"----------------------------------------------------------------",
-"For more information, google 'gpio with sysfs'",
-"With patience, you can learn it. Believe in yourself",
-"PRESS ANY ARROW KEY TO EXIT THIS PROMPT"
-"",
-"",
-"more text",
-"more text",
-"more text",
-"more text",
-"more text",
-"more text",
-"more text",
-"more text",
-"more text",
-"more text",
-"more text",
-"more text",
-"more text",
-"more text",
-"more text",
-"more text",
-"more text",
-]
+gpioHelp="""AVAILABLE COMMANDS: 
+
+s - initialize pin
+u - unitialiaze pin
+r - read pin's current value
+i - set pin direction input
+o - set pin direction output
+1 - set pin high
+0 - set pin low
+
+
+The row of pins on the board have several functions
+Pins marked Ground 5 volts and 3.3 volts can't be changed
+The other ones can either be general purpose inputs or outputs
+They are called GPIO
+Some GPIO are part of other systems such as SPI I2C and I2S
+
+----------------------------------------------------------------
+
+Pin names are derived from a formula based on the H3 CPU:
+(position of letter in alphabet - 1) * 32 + pin number
+So PG14 would be pin number 206
+Pins have to be initialized before they can be used
+Echo your calculated pin number to /sys/class/gpio/export
+This creates the directory /sys/class/gpio/gpio206
+Now you can change the properties of the pins
+By echoing values to the files in that directory
+
+----------------------------------------------------------------
+
+For more information google 'gpio with sysfs'
+With patience you can learn it. Believe in yourself
+
+Press the b key to exit this prompt
+
+
+more text
+more text
+ _   _ _____ _     _     ___  
+| | | | ____| |   | |   / _ \ 
+| |_| |  _| | |   | |  | | | |
+|  _  | |___| |___| |__| |_| |
+|_| |_|_____|_____|_____\___/ 
+                              
+
+"""

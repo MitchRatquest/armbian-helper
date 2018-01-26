@@ -4,7 +4,7 @@ from time import sleep
 from menus import * #get all those stats
 #################################################
 #AVAILABLE BOARDS: opipc, opiz, opione, neo
-board = neo
+board = opiz
 ############################################
 COLUMNS=79 #default tty size - 1 
 LINES=24
@@ -28,46 +28,21 @@ def test(stdscr,board):
 		quit()
 
 def gpioMenu(screen, board):
-	helpwin,helppanel = make_panel(LINES,COLUMNS,0,0)
-	helppanel.hide()
-	helpindex = helpMenuUpdate(helpwin,helppanel,gpioHelp,0)
-	defwin,defpanel = make_panel(24,75,0,0)
-	defpanel.hide()
-	screen.erase()
-	warning="White arrow on board always points to pin 1"
-	screen.addstr(0,COLUMNS/2-len(warning)/2,warning,curses.A_BOLD)
+	helpwin = initGpioMenu(screen,board)
+	index=4
 	pinNumbers=board[3]
 	pinNames=board[2]
-	offset=1
-	for x in range(0,len(pinNumbers)+1): #create pin numbers
-		if x % 2==1: 				#right side
-			screen.addstr((x+offset-(x/2)), (COLUMNS/2-1), str(x), curses.A_BOLD)			 #put even numbers on right side 
-			screen.addstr((x+offset-(x/2)), (COLUMNS/2-4)-len(pinNames[x]), pinNames[x])	 #names on right side at the right offset
-		else:
-			screen.addstr((x+offset-(x/2)), (COLUMNS/2+2), str(x), curses.A_BOLD) 			#put odd numbers on left side
-			screen.addstr((x+offset-(x/2)), (COLUMNS/2+7), pinNames[x])						#names on left side
-	#now draw a box
-	screen.addstr(offset,36,'.-------.') 							#top bar
-	screen.addstr(offset+len(pinNumbers)/2+1,36,"'-------'")		#bottom bar
-	screen.vline(offset+1,36,'|',len(pinNumbers)/2)					#left side
-	screen.vline(offset+1,44,'|',len(pinNumbers)/2)					#right side
-	helpstring = "press h for help"
-	screen.addstr(offset+len(pinNumbers)/2+3,(COLUMNS/2)-(len(helpstring))/2,helpstring,curses.A_BOLD)
-	index=4											#place on screen to draw
-	screen.chgat(index/2,15,25,curses.A_STANDOUT)	#first pin
+
 	while True:
+		screen.timeout(20)
 		pinStats(index, screen)
-		#screen.timeout(-4)
 		c = screen.getch()
 		
 		if c == curses.KEY_RIGHT:
-			helppanel.hide()
-			defpanel.hide()
-			screen.hline(24,0," ",COLUMNS)
+			screen.hline(24,0," ",COLUMNS)		#clear status line
 			index=index+1
-			#if index >=44:
 			if index >= len(pinNumbers)+4:		#out of bounds on bottom
-				index=4							#wra
+				index=4							#wrap selection
 			for x in range(0,LINES):
 				screen.chgat(x,0,curses.A_NORMAL)
 			if index %2==1: #right side
@@ -76,9 +51,7 @@ def gpioMenu(screen, board):
 				screen.chgat(index/2,15,25,curses.A_STANDOUT)
 		
 		if c == curses.KEY_LEFT:
-			helppanel.hide()
-			defpanel.hide()
-			screen.hline(24,0," ",COLUMNS)
+			screen.hline(24,0," ",COLUMNS)		#clear status line
 			if index <5:						#out of bounds on top 
 				index= len(pinNumbers)+4		#wrap selection to bottom right
 			index = index-1
@@ -90,9 +63,7 @@ def gpioMenu(screen, board):
 				screen.chgat(index/2,15,25,curses.A_STANDOUT)
 		
 		if c == curses.KEY_UP:
-			helppanel.hide()
-			defpanel.hide()
-			screen.hline(24,0," ",COLUMNS)
+			screen.hline(24,0," ",COLUMNS)		#clear status line
 			index = index-2
 			if index <4: 						#out of bounds on the top
 				index=len(pinNumbers)+3			#wrap selection to bottom right
@@ -104,9 +75,7 @@ def gpioMenu(screen, board):
 				screen.chgat(index/2,15,25,curses.A_STANDOUT)
 		
 		if c == curses.KEY_DOWN:
-			helppanel.hide()
-			defpanel.hide()
-			screen.hline(24,0," ",COLUMNS)
+			screen.hline(24,0," ",COLUMNS)		#clear status line
 			index = index+2
 			if index >=len(pinNumbers)+4:		#out of bottom bounds
 				index=4							#wrap selection to top left
@@ -117,7 +86,7 @@ def gpioMenu(screen, board):
 			else:
 				screen.chgat(index/2,15,25,curses.A_STANDOUT)
 		
-		if c == 27: #escape key to quit
+		if c == 98: #'b' key to quit
 			clearScreen(screen)
 			return
 ###########################################
@@ -130,7 +99,7 @@ def gpioMenu(screen, board):
 # 0 = set low
 # r = read pin value
 #
-# h = help menu, basically this prompt
+# h = help menu
 #
 ###############################################
 		if c == 115: # ord('s')
@@ -186,8 +155,6 @@ def gpioMenu(screen, board):
 				if value == -1:
 					response = "Pin is already set to output"
 				screen.addstr(24,80/2-len(response)/2,response,curses.A_STANDOUT)
-				
-				
 		if c == 49: # '1'
 			screen.hline(24,0," ",79) #clear line completely
 			response=''
@@ -206,7 +173,6 @@ def gpioMenu(screen, board):
 				if value == -1:
 					response = "Pin's value is already at 1"
 			screen.addstr(24,80/2-len(response)/2,response,curses.A_STANDOUT)
-				
 		if c == 48: # '0'
 			screen.hline(24,0," ",79) #clear line completely
 			if orangepiPCPins[(index-3)*2-1] == -1:
@@ -222,62 +188,77 @@ def gpioMenu(screen, board):
 				if value == -1:
 					response = "Pin's value is already at 0"
 			screen.addstr(24,80/2-len(response)/2,response,curses.A_STANDOUT)
-		
 		if c == 104: # 'h'
-			cham = helpMenuShow(helpwin,helppanel,gpioHelp)
+			helpMenuShow(helpwin,gpioHelp)
 		updateScreen(screen)
 
-	
-def helpMenuShow(window, panel,string):
-	panel.show()
-	window.refresh()
-	window.timeout(500)
+def initGpioMenu(screen,board,index=4):
+	helpwin=make_panel(LINES,COLUMNS,0,0)
+	helpwin[1].hide()
+	helpindex=0
+	screen.erase()
+	updateScreen(screen)
+	warning="White arrow on board always points to pin 1"
+	screen.addstr(0,COLUMNS/2-len(warning)/2,warning,curses.A_BOLD)
+	pinNumbers=board[3]
+	pinNames=board[2]
+	offset=1
+	for x in range(0,len(pinNumbers)+1): #create pin numbers
+		if x % 2==1: 				#right side
+			screen.addstr((x+offset-(x/2)), (COLUMNS/2-1), str(x), curses.A_BOLD)			 #put even numbers on right side 
+			screen.addstr((x+offset-(x/2)), (COLUMNS/2-4)-len(pinNames[x]), pinNames[x])	 #names on right side at the right offset
+		else:
+			screen.addstr((x+offset-(x/2)), (COLUMNS/2+2), str(x), curses.A_BOLD) 			#put odd numbers on left side
+			screen.addstr((x+offset-(x/2)), (COLUMNS/2+7), pinNames[x])						#names on left side
+	#now draw a box
+	screen.addstr(offset,36,'.-------.') 							#top bar
+	screen.addstr(offset+len(pinNumbers)/2+1,36,"'-------'")		#bottom bar
+	screen.vline(offset+1,36,'|',len(pinNumbers)/2)					#left side
+	screen.vline(offset+1,44,'|',len(pinNumbers)/2)					#right side
+	helpstring = "press h for help"
+	screen.addstr(offset+len(pinNumbers)/2+2,(COLUMNS/2)-(len(helpstring))/2,helpstring,curses.A_BOLD)
+	index=4											#place on screen to draw
+	screen.chgat(index/2,15,25,curses.A_STANDOUT)	#first pin
+	updateScreen(screen)
+	return helpwin
+
+def helpMenuShow(windowpanel,string):
+	windowpanel[1].show()
+	windowpanel[0].refresh()
+	windowpanel[0].timeout(500)
 	index = 0
+	helpMenuUpdate(windowpanel,string,index)
 	while True:
-		c = window.getch()
-		#window.addstr(20,10,'                        ')
-		#window.addstr(20,10,str(c))
-		if c == 32:
-			panel.hide()
+		c = windowpanel[0].getch()
+		if c == 98: # b key
+			windowpanel[1].hide()
 			return
 		if c == 66: #arrow down
 			index = index + 1
-			index = helpMenuUpdate(window,panel,string,index)
+			index = helpMenuUpdate(windowpanel,string,index)
 			if index > len(string)-LINES-1:
 				index = index -1
 		if c == 65: #arrow up
 			index = index - 1
-			index = helpMenuUpdate(window,panel,string,index)
+			index = helpMenuUpdate(windowpanel,string,index)
 			if index <= 0:
 				index = index + 1
-		updateScreen(window)
+		updateScreen(windowpanel[0])
 
-	
-def helpMenuUpdate(window, panel,gpio,index):
+def helpMenuUpdate(windowpanel,gpio,index):
 	for x in range(LINES-3): #clear window without erasing border
-		window.addstr(1+x,2,'                                                                  ')
+		windowpanel[0].addstr(1+x,2,'                                                                  ')
 	for x in range(LINES-4):
 		try:
-			window.addstr(2+x,4,str(gpio[x+index]))
+			windowpanel[0].addstr(2+x,4,str(gpio.strip('\n').split('\n')[x+index]))
 		except:
 			pass
-		#add warning line at bottom:
-		warning = "up/down arrow to scroll,spacebar to exit"
-		window.addstr(LINES-2,4,warning,curses.A_BOLD)
+		warning = "up/down arrow to scroll, b to exit"
+		windowpanel[0].addstr(LINES-2,4,warning,curses.A_BOLD)
 	return index
-	'''
-	window.timeout(-1)
-	c = window.getch()
-	if c == curses.KEY_NPAGE: #page down
-		window.addstr(5,40,"FUCK YA")
-		window.refresh()
-	if c == curses.KEY_PPAGE: #page down
-		window.addstr(5,25,"FFFFFFFFFFFUCK YA")
-		window.refresh()
-'''
+
 def mainMenu(stdscr, currentMenuItem, menuitems):
 	while True:
-		changed=0
 		c = 0
 		c = stdscr.getch()						#get a character
 
@@ -336,6 +317,8 @@ def mainMenu(stdscr, currentMenuItem, menuitems):
 				pass
 			if currentMenuItem=="USBOTG":
 				usbMenu(stdscr)
+				stdscr.erase()
+				updateScreen(stdscr)
 				'''
 				possible legacy drivers:
 					g_ether
@@ -353,9 +336,8 @@ def mainMenu(stdscr, currentMenuItem, menuitems):
 				modify /etc/modules
 				'''
 		updateScreen(stdscr)
-		#if(changed==1):
 		highlightMenu(currentMenuItem,stdscr,board)	#display selection
-		if c == 27: #escape key to quit
+		if c == 98: # b  key to quit
 			curses.endwin()
 			quit()
 
@@ -407,8 +389,11 @@ def highlightMenu(menuitem,screen,board): #need to pass it stdscr
 	         .------------------. <---endy
 	                            ^endx
 	'''
-	for x in range(0,len(board[0].split('\n'))): #redraw screen with outline
-		screen.addstr(x,0,board[0].split('\n')[x])
+	try:											#errors out sometimes
+		for x in range(0,len(board[0].split('\n'))): #redraw screen with outline
+			screen.addstr(x,0,board[0].split('\n')[x])
+	except:
+		pass
 	counter = 0
 	for x in range(board[1][board[1].index(menuitem)+1][0],board[1][board[1].index(menuitem)+1][2]+1): #only highlight the areas that need it
 		screen.addstr((board[1][board[1].index(menuitem)+1][0])+counter,board[1][board[1].index(menuitem)+1][1],board[0].split('\n')[x][board[1][board[1].index(menuitem)+1][1]:board[1][board[1].index(menuitem)+1][3]], curses.A_BOLD | curses.A_STANDOUT)
@@ -428,7 +413,7 @@ def setupScreen(screen):
 	#screen.bkgd(' ', curses.color_pair(0 ) )
 
 def clearScreen(screen):
-	for x in range(0,25):
+	for x in range(0,LINES):
 		screen.hline(x,0,' ',COLUMNS) 		#erase entire screen
 		screen.chgat(x,0,curses.A_NORMAL)	#reset to normal attributes
 
@@ -511,18 +496,6 @@ def replaceModules(replace): #modify boot modules
 			newstring += replace + '\n'
 		newstring += line
 	writefile('/etc/modules',newstring)
-#modprobe ir_lirc_codec
-
-def runCommand(command):
-	command=command.split(' ')
-	p = subprocess.Popen(command,stdout=subprocess.PIPE)
-	out, err = p.communicate()
-	return out
-
-	help = subprocess.Popen(command,stdout=subprocess.PIPE)
-	out = p.communicate
-	for line in out[0].split('\n'):
-		print line
 
 def Bash(command):
 	return subprocess.check_output(['bash','-c',command]).strip('\n').split('\n')
@@ -536,7 +509,7 @@ def findThis(command,pattern):
 
 def usbMenu(screen):
 	screen.erase()
-	#lsmod | grep -m1 g_
+	updateScreen(screen)
 	currentGadget = "Current loaded gadget: "
 	currentGadget += Bash("lsmod | grep -m1 g_ | awk '{print $1}'")[0] #current module loaded
 	kernel = Bash("uname -r")[0]
@@ -563,7 +536,10 @@ def usbMenu(screen):
 	except:
 		gadgetfs = "no gadgetFS support available"
 	FUNCTIONS_USER_ENABLED=[]
-	c = screen.getch()
+	while True:
+		c = screen.getch()
+		if c == 98: # b key
+			return
 #setup -> go through list of gadgets -> finish
 #https://www.kernel.org/doc/Documentation/usb/gadget_configfs.txt
 #https://www.kernel.org/doc/Documentation/ABI/testing/configfs-usb-gadget-ecm
